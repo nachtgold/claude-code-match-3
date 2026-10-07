@@ -191,6 +191,15 @@ function cellLook(g: Game, i: number, showCursor: boolean): Look {
   return { ...look, bg, justify: slide?.justify ?? 'center' }
 }
 
+// The glyph padded to the cell's full width with no-break spaces (which no
+// surface collapses), so the whole cell is drawn text, not just its middle.
+function cellText(look: Look): string {
+  const pad = '\u00a0'
+  if (look.justify === 'flex-start') return look.ch + pad + pad
+  if (look.justify === 'flex-end') return pad + pad + look.ch
+  return pad + look.ch + pad
+}
+
 function stars(n: number): string {
   return '★'.repeat(n) + '☆'.repeat(3 - n)
 }
@@ -203,8 +212,8 @@ function Board(surface: Surface, g: Game, showCursor: boolean) {
     for (let c = 0; c < g.C; c++) {
       const look = cellLook(g, r * g.C + c, showCursor)
       cells.push(
-        <Box width={CELL_W} height={1} flexShrink={0} justifyContent={look.justify} overflow="hidden" backgroundColor={look.bg}>
-          <Text color={look.color} bold={look.bold}>{look.ch}</Text>
+        <Box width={CELL_W} height={1} flexShrink={0} overflow="hidden" backgroundColor={look.bg}>
+          <Text color={look.color} bold={look.bold} backgroundColor={look.bg}>{cellText(look)}</Text>
         </Box>,
       )
     }
