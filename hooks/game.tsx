@@ -104,10 +104,10 @@ function onKey(surface: Surface, k: ClientKeyEvent) {
   redraw(surface)
 }
 
-function cellAt(g: Game, p: ClientPointerEvent): number {
-  const r = p.y - HEADER_ROWS - 1
-  const c = Math.floor((p.x - 1) / CELL_W)
-  if (p.x < 1 || c >= g.C) return -1
+export function cellAt(g: Game, p: ClientPointerEvent): number {
+  const r = p.y - HEADER_ROWS
+  const c = Math.floor(p.x / CELL_W)
+  if (p.x < 0 || c >= g.C) return -1
   return at(g, r, c)
 }
 
@@ -211,7 +211,9 @@ function Board(surface: Surface, g: Game, showCursor: boolean) {
     rows.push(<Box flexDirection="row" height={1}>{cells}</Box>)
   }
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="#5c6370" width={g.C * CELL_W + 2} flexShrink={0}>
+    // No border: surfaces disagree on whether one takes a cell, and the
+    // pointer maths needs the board's first cell at a known place.
+    <Box flexDirection="column" width={g.C * CELL_W} flexShrink={0}>
       {rows}
     </Box>
   )
@@ -285,7 +287,7 @@ const Match3: ClientModule<GameProps, S> = (props, surface) => {
 
   const { Box, Text } = surface.elements
   const g = ctx.g
-  ctx.wide = surface.columns === 0 || surface.columns >= g.C * CELL_W + 2 + SIDE_W
+  ctx.wide = surface.columns === 0 || surface.columns >= g.C * CELL_W + SIDE_W
   return (
     <Box flexDirection="column">
       <Text bold color="#d787ff" wrap="truncate-end">

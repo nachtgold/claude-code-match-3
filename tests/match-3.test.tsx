@@ -4,6 +4,7 @@ import type { On } from 'claude-code'
 import { analyze, expand, findMove, findRuns, goalsMet, newGame, tick, trySwap } from '../hooks/engine'
 import type { Game, Kind } from '../hooks/engine'
 import { pickLang } from '../hooks/i18n'
+import { cellAt } from '../hooks/game'
 
 // A base 8×8 board with no three in a row: color (2r + c) mod 5.
 const BASE = ['01234012', '23401234', '40123401', '12340123', '34012340', '01234012', '23401234', '40123401']
@@ -168,8 +169,8 @@ test('the pane starts at level 1 in English', async ($, on) => {
     await ui.press({ key: 'restart' })
     expect(await ui.find({ in: 'game', text: /Score/ })).toBeDefined()
     // Drag the top-left gem onto its right neighbour and let the slide play.
-    await ui.pointer({ type: 'down', x: 2, y: 2, button: 'left' })
-    await ui.pointer({ type: 'up', x: 5, y: 2, button: 'left' })
+    await ui.pointer({ type: 'down', x: 1, y: 1, button: 'left' })
+    await ui.pointer({ type: 'up', x: 4, y: 1, button: 'left' })
     await ui.advance(2000)
     expect(await ui.find({ in: 'game', text: /Moves/ })).toBeDefined()
     await ui.unmount()
@@ -211,4 +212,14 @@ test('a bot plays every map to the end without getting stuck', () => {
       for (const cell of g.cells) if (!cell.hole && cell.stone === 0) expect(cell.gem).not.toBeNull()
     }
   }
+})
+
+test('a click lands on the cell under the pointer', () => {
+  const g = newGame(0, 'en')
+  // Row 5, column 5 (1-based) of the board: the title takes the first row,
+  // each cell three columns.
+  expect(cellAt(g, { type: 'up', x: 12, y: 5, button: 'left' })).toBe(4 * 8 + 4)
+  expect(cellAt(g, { type: 'up', x: 14, y: 5, button: 'left' })).toBe(4 * 8 + 4)
+  expect(cellAt(g, { type: 'up', x: 0, y: 1, button: 'left' })).toBe(0)
+  expect(cellAt(g, { type: 'up', x: 24, y: 1, button: 'left' })).toBe(-1)
 })
