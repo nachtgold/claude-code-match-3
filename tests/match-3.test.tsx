@@ -161,7 +161,7 @@ test('the pane starts at level 1 in English', async ($, on) => {
   await startSession($, on, { LANG: 'en_US.UTF-8' })
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ plugin: 'match-3', surface, component: 'Pane', props: PANE, requestId: 'match3' })
-    await ui.resize({ columns: 80, rows: 30 })
+    await ui.resize({ columns: 90, rows: 30 })
     expect(await ui.find({ in: 'game', text: /Level 1\/5: Meadow/ })).toBeDefined()
     expect(await ui.find({ in: 'game', text: /Moves/ })).toBeDefined()
     await ui.press({ key: 'hint' })
@@ -169,8 +169,8 @@ test('the pane starts at level 1 in English', async ($, on) => {
     await ui.press({ key: 'restart' })
     expect(await ui.find({ in: 'game', text: /Score/ })).toBeDefined()
     // Drag the top-left gem onto its right neighbour and let the slide play.
-    await ui.pointer({ type: 'down', x: 1, y: 1, button: 'left' })
-    await ui.pointer({ type: 'up', x: 4, y: 1, button: 'left' })
+    await ui.pointer({ type: 'down', x: 2, y: 1, button: 'left' })
+    await ui.pointer({ type: 'up', x: 7, y: 1, button: 'left' })
     await ui.advance(2000)
     expect(await ui.find({ in: 'game', text: /Moves/ })).toBeDefined()
     await ui.unmount()
@@ -180,7 +180,7 @@ test('the pane starts at level 1 in English', async ($, on) => {
 test('the pane speaks German under a German locale', async ($, on) => {
   await startSession($, on, { LANG: 'de_DE.UTF-8' })
   const ui = await $.ui.mount({ plugin: 'match-3', surface: 'desktop', component: 'Pane', props: PANE, requestId: 'match3' })
-  await ui.resize({ columns: 80, rows: 30 })
+  await ui.resize({ columns: 90, rows: 30 })
   expect(await ui.find({ in: 'game', text: /Level 1\/5: Blumenwiese/ })).toBeDefined()
   expect(await ui.find({ in: 'game', text: /Züge/ })).toBeDefined()
   await ui.unmount()
@@ -216,10 +216,12 @@ test('a bot plays every map to the end without getting stuck', () => {
 
 test('a click lands on the cell under the pointer', () => {
   const g = newGame(0, 'en')
-  // Row 5, column 5 (1-based) of the board: the title takes the first row,
-  // each cell three columns.
-  expect(cellAt(g, { type: 'up', x: 12, y: 5, button: 'left' })).toBe(4 * 8 + 4)
-  expect(cellAt(g, { type: 'up', x: 14, y: 5, button: 'left' })).toBe(4 * 8 + 4)
+  // Row 5, column 5 (1-based): the title takes the first row, each cell is
+  // five columns wide and two rows tall, and all of it counts.
+  for (const [x, y] of [[20, 9], [24, 9], [20, 10], [24, 10]]) {
+    expect(cellAt(g, { type: 'up', x, y, button: 'left' })).toBe(4 * 8 + 4)
+  }
   expect(cellAt(g, { type: 'up', x: 0, y: 1, button: 'left' })).toBe(0)
-  expect(cellAt(g, { type: 'up', x: 24, y: 1, button: 'left' })).toBe(-1)
+  expect(cellAt(g, { type: 'up', x: 0, y: 0, button: 'left' })).toBe(-1)
+  expect(cellAt(g, { type: 'up', x: 40, y: 1, button: 'left' })).toBe(-1)
 })

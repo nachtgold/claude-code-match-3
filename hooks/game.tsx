@@ -22,7 +22,10 @@ type Ctx = {
 type S = { ctx: Ctx; v: number }
 type Surface = ClientSurface<S>
 
-const CELL_W = 3
+// One board cell in character cells: wide and tall enough for a glyph with
+// room around it, and for a special's three glyphs.
+const CELL_W = 5
+const CELL_H = 2
 const HEADER_ROWS = 1
 const SIDE_W = 34
 const ADVANCE_TICKS = 35
@@ -105,9 +108,9 @@ function onKey(surface: Surface, k: ClientKeyEvent) {
 }
 
 export function cellAt(g: Game, p: ClientPointerEvent): number {
-  const r = p.y - HEADER_ROWS
+  const r = Math.floor((p.y - HEADER_ROWS) / CELL_H)
   const c = Math.floor(p.x / CELL_W)
-  if (p.x < 0 || c >= g.C) return -1
+  if (p.x < 0 || p.y < HEADER_ROWS || c >= g.C) return -1
   return at(g, r, c)
 }
 
@@ -140,64 +143,81 @@ function onPointer(surface: Surface, p: ClientPointerEvent) {
 
 // ---------- drawing ----------
 
-type Justify = 'center' | 'flex-start' | 'flex-end'
-type Look = { ch: string; color?: string; bold?: boolean; bg?: string; justify?: Justify }
+type Align = 'center' | 'flex-start' | 'flex-end'
+type Part = { ch: string; color?: string; bold?: boolean }
+// A cell: its glyphs, its fill, and where the glyphs sit (a slide moves them).
+type Look = { parts: Part[]; bg?: string; alignX?: Align; alignY?: Align }
 
-function gemLook(gem: Gem | null): Look {
-  if (!gem) return { ch: ' ' }
+const DARK = '#141414'
+const MARK = { row: '↔', col: '↕', bomb: '✹' } as const
+
+// Plain gems: the color's shape in its color. Specials: a tile filled with
+// their color, the shape on both sides and the effect's mark in the middle,
+// all dark on the fill, so color and shape both say which color it counts as.
+function gemParts(gem: Gem | null): { parts: Part[]; fill?: string } {
+  if (!gem) return { parts: [] }
   const color = COLORS[gem.c] ?? '#ffffff'
-  if (gem.k === 'row') return { ch: '↔', color, bold: true }
-  if (gem.k === 'col') return { ch: '↕', color, bold: true }
-  if (gem.k === 'bomb') return { ch: '✹', color, bold: true }
-  if (gem.k === 'rainbow') return { ch: '✦', color: '#ffffff', bold: true }
-  if (gem.k === 'treasure') return { ch: '$', color: '#ffcc33', bold: true }
-  return { ch: GLYPHS[gem.c], color }
+  const shape = GLYPHS[gem.c]
+  if (gem.k === 'row' || gem.k === 'col' || gem.k === 'bomb') {
+    return {
+      parts: [{ ch: shape, color: DARK }, { ch: MARK[gem.k], color: DARK, bold: true }, { ch: shape, color: DARK }],
+      fill: color,
+    }
+  }
+  if (gem.k === 'rainbow') {
+    return {
+      parts: [{ ch: GLYPHS[0], color: COLORS[0] }, { ch: '✦', color: DARK, bold: true }, { ch: GLYPHS[3], color: COLORS[3] }],
+      fill: '#f2f2f2',
+    }
+  }
+  if (gem.k === 'treasure') return { parts: [{ ch: '$', color: '#ffcc33', bold: true }] }
+  return { parts: [{ ch: shape, color }] }
 }
 
 // A swap slides in three frames: both gems lean towards each other, cross
-// into the other cell, then settle. Side by side they move inside their
-// 3-column boxes; one above the other they cross with both cells lit.
-function swapFrame(g: Game, i: number): { gem: Gem | null; justify: Justify; lit: boolean } | null {
+// into the other cell, then settle in the middle.
+function swapFrame(g: Game, i: number): { gem: Gem | null; alignX: Align; alignY: Align } | null {
   if ((g.phase !== 'swap' && g.phase !== 'unswap') || !g.swap) return null
   const [a, b] = g.swap
   if (i !== a && i !== b) return null
   const other = i === a ? b : a
   const frame = SWAP_FRAMES - g.timer
   const isSideways = rc(g, a)[0] === rc(g, b)[0]
-  const towardOther: Justify = !isSideways ? 'center' : other > i ? 'flex-end' : 'flex-start'
-  if (frame <= 0) return { gem: g.cells[i].gem, justify: towardOther, lit: !isSideways }
-  if (frame === 1) return { gem: g.cells[other].gem, justify: towardOther, lit: !isSideways }
-  return { gem: g.cells[other].gem, justify: 'center', lit: false }
+  const toward: Align = other > i ? 'flex-end' : 'flex-start'
+  const alignX = isSideways ? toward : 'center'
+  const alignY = isSideways ? 'center' : toward
+  if (frame <= 0) return { gem: g.cells[i].gem, alignX, alignY }
+  if (frame === 1) return { gem: g.cells[other].gem, alignX, alignY }
+  return { gem: g.cells[other].gem, alignX: 'center', alignY: 'center' }
 }
 
-// Each cell is one glyph in a fixed 3-column box: the box, not the glyph's
-// own width, sets the spacing, so every surface lines up the same.
+// Each cell is a fixed CELL_W × CELL_H box with its glyphs in the middle: the
+// box, not a glyph's own width, sets the spacing, so every surface lines up.
 function cellLook(g: Game, i: number, showCursor: boolean): Look {
   const cell = g.cells[i]
   const [r, c] = rc(g, i)
-  if (cell.hole) return { ch: ' ' }
-  let bg = cell.ice ? ICE_BG[cell.ice] : BG[(r + c) % 2]
-
-  if (cell.stone > 0) return { ch: cell.stone > 1 ? '▓' : '░', color: '#b0b0b0', bold: true, bg: '#4a4a4a' }
-  if (g.phase === 'flash' && g.flash.includes(i)) return { ch: '✧', color: '#202020', bold: true, bg: '#e8e8e8' }
+  if (cell.hole) return { parts: [] }
+  if (cell.stone > 0) {
+    const ch = cell.stone > 1 ? '▓' : '░'
+    return { parts: [{ ch: ch + ch + ch, color: '#b0b0b0', bold: true }], bg: '#4a4a4a' }
+  }
+  if (g.phase === 'flash' && g.flash.includes(i)) return { parts: [{ ch: '✧', color: DARK, bold: true }], bg: '#e8e8e8' }
 
   const slide = swapFrame(g, i)
-  const look = gemLook(slide ? slide.gem : cell.gem)
-  if (cell.lock) bg = '#5a4526'
-  if (g.hint && g.hint.includes(i)) bg = '#2f6b3a'
-  if (showCursor && g.cursor === i && g.phase !== 'won' && g.phase !== 'lost') bg = '#56607a'
-  if (g.sel === i) bg = '#9a7d12'
-  if (slide?.lit) bg = '#3d4658'
-  return { ...look, bg, justify: slide?.justify ?? 'center' }
-}
+  const { parts, fill } = gemParts(slide ? slide.gem : cell.gem)
+  let bg = fill ?? (cell.ice ? ICE_BG[cell.ice] : BG[(r + c) % 2])
+  if (!fill && cell.lock) bg = '#5a4526'
 
-// The glyph padded to the cell's full width with no-break spaces (which no
-// surface collapses), so the whole cell is drawn text, not just its middle.
-function cellText(look: Look): string {
-  const pad = '\u00a0'
-  if (look.justify === 'flex-start') return look.ch + pad + pad
-  if (look.justify === 'flex-end') return pad + pad + look.ch
-  return pad + look.ch + pad
+  // Hint, cursor and selection: a tint on plain cells, brackets on every cell
+  // (a special's own fill would hide a tint).
+  let mark: string | null = null
+  if (g.hint && g.hint.includes(i)) { mark = '#5fd75f'; if (!fill) bg = '#2f6b3a' }
+  if (showCursor && g.cursor === i && g.phase !== 'won' && g.phase !== 'lost') { mark = '#ffffff'; if (!fill) bg = '#56607a' }
+  if (g.sel === i) { mark = '#ffd700'; if (!fill) bg = '#9a7d12' }
+  const framed = mark && fill
+    ? [{ ch: '[', color: DARK, bold: true }, ...parts, { ch: ']', color: DARK, bold: true }]
+    : parts
+  return { parts: framed, bg, alignX: slide?.alignX, alignY: slide?.alignY }
 }
 
 function stars(n: number): string {
@@ -212,12 +232,23 @@ function Board(surface: Surface, g: Game, showCursor: boolean) {
     for (let c = 0; c < g.C; c++) {
       const look = cellLook(g, r * g.C + c, showCursor)
       cells.push(
-        <Box width={CELL_W} height={1} flexShrink={0} overflow="hidden" backgroundColor={look.bg}>
-          <Text color={look.color} bold={look.bold} backgroundColor={look.bg}>{cellText(look)}</Text>
+        <Box
+          width={CELL_W}
+          height={CELL_H}
+          flexShrink={0}
+          flexDirection="column"
+          justifyContent={look.alignY ?? 'center'}
+          alignItems={look.alignX ?? 'center'}
+          overflow="hidden"
+          backgroundColor={look.bg}
+        >
+          <Box flexDirection="row">
+            {look.parts.map(p => <Text color={p.color} bold={p.bold}>{p.ch}</Text>)}
+          </Box>
         </Box>,
       )
     }
-    rows.push(<Box flexDirection="row" height={1}>{cells}</Box>)
+    rows.push(<Box flexDirection="row" height={CELL_H}>{cells}</Box>)
   }
   return (
     // No border: surfaces disagree on whether one takes a cell, and the

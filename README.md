@@ -37,6 +37,8 @@ Five colors: ● red, ★ yellow, ▲ green, ◆ blue, ■ purple.
 | L or T shape | ✹ bomb | blasts the 3×3 area around it |
 | 5 in a row | ✦ color bomb | swap it with a gem: every gem of that color is cleared |
 
+Specials are tiles filled with their color, the color's shape on both sides and the effect's mark in the middle (●↔●, ◆↕◆, ▲✹▲), so you can tell their color by shape too. They match like a gem of that color.
+
 A special caught in another blast fires too, so chain reactions happen. Each cascade raises the points multiplier.
 
 ### Combos: swap two specials
