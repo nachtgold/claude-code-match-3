@@ -46,7 +46,6 @@ export type Game = {
   cursor: number
   sel: number
   hint: [number, number] | null
-  idle: number
   msg: string
   msgTicks: number
   nextId: number
@@ -172,7 +171,7 @@ export function newGame(lvl: number, lang: Lang = 'en'): Game {
     lvl, lang, R, C, cells: [], moves: def.moves, score: 0, cascade: 1,
     collected: [0, 0, 0, 0, 0], treasures: 0, phase: 'idle', timer: 0,
     flash: [], created: [], swap: null, swapKind: 'none', cursor: Math.floor(R / 2) * C + Math.floor(C / 2),
-    sel: -1, hint: null, idle: 0, msg: TEXTS[lang].levels[lvl].blurb, msgTicks: 60, nextId: 1, reported: false,
+    sel: -1, hint: null, msg: TEXTS[lang].levels[lvl].blurb, msgTicks: 60, nextId: 1, reported: false,
   }
   for (const row of def.layout) {
     for (const ch of row) {
@@ -572,7 +571,6 @@ export function trySwap(g: Game, a: number, b: number): boolean {
     return false
   }
   g.hint = null
-  g.idle = 0
   g.sel = -1
   g.cascade = 1
   if (isCombo(g, a, b)) g.swapKind = 'combo'
@@ -634,11 +632,6 @@ export function tick(g: Game): boolean {
   }
   switch (g.phase) {
     case 'idle':
-      if (++g.idle === 90 && !g.hint) {
-        g.hint = findMove(g)
-        return true
-      }
-      return changed
     case 'won':
     case 'lost':
       return changed

@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { analyze, expand, findMove, findRuns, goalsMet, newGame, tick, trySwap } from '../hooks/engine'
+import { analyze, expand, findMove, findRuns, goalsMet, newGame, tick, trySwap, useHint } from '../hooks/engine'
 import type { Game, Kind } from '../hooks/engine'
 import { pickLang } from '../hooks/i18n'
 import { cellAt } from '../hooks/game'
@@ -224,4 +224,12 @@ test('a click lands on the cell under the pointer', () => {
   expect(cellAt(g, { type: 'up', x: 0, y: 1, button: 'left' })).toBe(0)
   expect(cellAt(g, { type: 'up', x: 0, y: 0, button: 'left' })).toBe(-1)
   expect(cellAt(g, { type: 'up', x: 40, y: 1, button: 'left' })).toBe(-1)
+})
+
+test('no hint shows up by itself, only when asked for', () => {
+  const g = newGame(0, 'en')
+  for (let t = 0; t < 2000; t++) tick(g)
+  expect(g.hint).toBeNull()
+  useHint(g)
+  expect(g.hint).not.toBeNull()
 })
