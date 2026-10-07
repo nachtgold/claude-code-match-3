@@ -41,6 +41,8 @@ export type Game = {
   flash: number[]
   created: { i: number; gem: Gem }[]
   swap: [number, number] | null
+  // What the swap under way turns out to be once its animation ends.
+  swapKind: 'match' | 'combo' | 'none'
   cursor: number
   sel: number
   hint: [number, number] | null
@@ -169,7 +171,7 @@ export function newGame(lvl: number, lang: Lang = 'en'): Game {
   const g: Game = {
     lvl, lang, R, C, cells: [], moves: def.moves, score: 0, cascade: 1,
     collected: [0, 0, 0, 0, 0], treasures: 0, phase: 'idle', timer: 0,
-    flash: [], created: [], swap: null, cursor: Math.floor(R / 2) * C + Math.floor(C / 2),
+    flash: [], created: [], swap: null, swapKind: 'none', cursor: Math.floor(R / 2) * C + Math.floor(C / 2),
     sel: -1, hint: null, idle: 0, msg: TEXTS[lang].levels[lvl].blurb, msgTicks: 60, nextId: 1, reported: false,
   }
   for (const row of def.layout) {
@@ -559,6 +561,9 @@ export function adjacent(g: Game, a: number, b: number): boolean {
   return Math.abs(ra - rb) + Math.abs(ca - cb) === 1
 }
 
+// Ticks a swap's slide takes, each way.
+export const SWAP_FRAMES = 3
+
 // The player swaps a and b; answers whether the swap was taken.
 export function trySwap(g: Game, a: number, b: number): boolean {
   if (g.phase !== 'idle' || a < 0 || b < 0 || !adjacent(g, a, b)) return false
@@ -570,27 +575,17 @@ export function trySwap(g: Game, a: number, b: number): boolean {
   g.idle = 0
   g.sel = -1
   g.cascade = 1
-  if (isCombo(g, a, b)) {
+  if (isCombo(g, a, b)) g.swapKind = 'combo'
+  else {
     swapGems(g, a, b)
-    g.moves--
-    const { cells, msg } = comboClear(g, a, b)
-    say(g, msg)
-    g.flash = [...cells]
-    g.created = []
-    g.phase = 'flash'
-    g.timer = 4
-    return true
+    g.swapKind = hasMatchAt(g, a) || hasMatchAt(g, b) ? 'match' : 'none'
+    swapGems(g, a, b)
   }
-  swapGems(g, a, b)
+  if (g.swapKind !== 'none') g.moves--
+  // The gems slide for SWAP_FRAMES ticks; tick() commits the swap after.
   g.swap = [a, b]
-  if (hasMatchAt(g, a) || hasMatchAt(g, b)) {
-    g.moves--
-    g.phase = 'swap'
-    g.timer = 1
-  } else {
-    g.phase = 'unswap'
-    g.timer = 3
-  }
+  g.phase = 'swap'
+  g.timer = SWAP_FRAMES
   return true
 }
 
@@ -647,11 +642,27 @@ export function tick(g: Game): boolean {
     case 'won':
     case 'lost':
       return changed
-    case 'swap':
+    case 'swap': {
       if (--g.timer > 0) return true
-      resolve(g, g.swap ?? [])
+      const [a, b] = g.swap!
+      swapGems(g, a, b)
+      if (g.swapKind === 'none') {
+        // Slide back.
+        g.phase = 'unswap'
+        g.timer = SWAP_FRAMES
+        return true
+      }
       g.swap = null
+      if (g.swapKind === 'combo') {
+        const { cells, msg } = comboClear(g, a, b)
+        say(g, msg)
+        g.flash = [...cells]
+        g.created = []
+        g.phase = 'flash'
+        g.timer = 4
+      } else resolve(g, [a, b])
       return true
+    }
     case 'unswap':
       if (--g.timer > 0) return true
       if (g.swap) swapGems(g, g.swap[0], g.swap[1])

@@ -2,9 +2,9 @@ import type { ClientKeyEvent, ClientModule, ClientPointerEvent, ClientSurface } 
 
 import type { GameProps } from '../types'
 import {
-  COLORS, GLYPHS, LEVELS, adjacent, at, goalText, levelText, newGame, rc, starsOf, tick, trySwap, useHint,
+  COLORS, GLYPHS, LEVELS, SWAP_FRAMES, adjacent, at, goalText, levelText, newGame, rc, starsOf, tick, trySwap, useHint,
 } from './engine'
-import type { Game } from './engine'
+import type { Game, Gem } from './engine'
 import { TEXTS } from './i18n'
 import type { Lang } from './i18n'
 
@@ -16,6 +16,8 @@ type Ctx = {
   wide: boolean
   // Ticks left before a won level moves on by itself.
   advanceIn: number
+  // The cursor shows only while the keyboard drives the game.
+  isKeyboard: boolean
 }
 type S = { ctx: Ctx; v: number }
 type Surface = ClientSurface<S>
@@ -82,6 +84,7 @@ function onKey(surface: Surface, k: ClientKeyEvent) {
   if (!ctx) return
   const g = ctx.g
   const key = k.key.toLowerCase()
+  ctx.isKeyboard = true
   const over = g.phase === 'won' || g.phase === 'lost'
 
   if (over && (key === 'return' || key === ' ' || key === 'n')) proceed(ctx)
@@ -113,6 +116,7 @@ function onPointer(surface: Surface, p: ClientPointerEvent) {
   if (!ctx || p.button !== 'left') return
   const g = ctx.g
   const i = cellAt(g, p)
+  ctx.isKeyboard = false
   if (p.type === 'down') {
     ctx.down = i
     return
@@ -136,11 +140,39 @@ function onPointer(surface: Surface, p: ClientPointerEvent) {
 
 // ---------- drawing ----------
 
-type Look = { ch: string; color?: string; bold?: boolean; bg?: string }
+type Justify = 'center' | 'flex-start' | 'flex-end'
+type Look = { ch: string; color?: string; bold?: boolean; bg?: string; justify?: Justify }
 
-// Each cell is one glyph centred in a fixed 3-column box: the box, not the
-// glyph's own width, sets the spacing, so every surface lines up the same.
-function cellLook(g: Game, i: number): Look {
+function gemLook(gem: Gem | null): Look {
+  if (!gem) return { ch: ' ' }
+  const color = COLORS[gem.c] ?? '#ffffff'
+  if (gem.k === 'row') return { ch: '↔', color, bold: true }
+  if (gem.k === 'col') return { ch: '↕', color, bold: true }
+  if (gem.k === 'bomb') return { ch: '✹', color, bold: true }
+  if (gem.k === 'rainbow') return { ch: '✦', color: '#ffffff', bold: true }
+  if (gem.k === 'treasure') return { ch: '$', color: '#ffcc33', bold: true }
+  return { ch: GLYPHS[gem.c], color }
+}
+
+// A swap slides in three frames: both gems lean towards each other, cross
+// into the other cell, then settle. Side by side they move inside their
+// 3-column boxes; one above the other they cross with both cells lit.
+function swapFrame(g: Game, i: number): { gem: Gem | null; justify: Justify; lit: boolean } | null {
+  if ((g.phase !== 'swap' && g.phase !== 'unswap') || !g.swap) return null
+  const [a, b] = g.swap
+  if (i !== a && i !== b) return null
+  const other = i === a ? b : a
+  const frame = SWAP_FRAMES - g.timer
+  const isSideways = rc(g, a)[0] === rc(g, b)[0]
+  const towardOther: Justify = !isSideways ? 'center' : other > i ? 'flex-end' : 'flex-start'
+  if (frame <= 0) return { gem: g.cells[i].gem, justify: towardOther, lit: !isSideways }
+  if (frame === 1) return { gem: g.cells[other].gem, justify: towardOther, lit: !isSideways }
+  return { gem: g.cells[other].gem, justify: 'center', lit: false }
+}
+
+// Each cell is one glyph in a fixed 3-column box: the box, not the glyph's
+// own width, sets the spacing, so every surface lines up the same.
+function cellLook(g: Game, i: number, showCursor: boolean): Look {
   const cell = g.cells[i]
   const [r, c] = rc(g, i)
   if (cell.hole) return { ch: ' ' }
@@ -149,37 +181,29 @@ function cellLook(g: Game, i: number): Look {
   if (cell.stone > 0) return { ch: cell.stone > 1 ? '▓' : '░', color: '#b0b0b0', bold: true, bg: '#4a4a4a' }
   if (g.phase === 'flash' && g.flash.includes(i)) return { ch: '✧', color: '#202020', bold: true, bg: '#e8e8e8' }
 
-  let look: Look = { ch: ' ' }
-  const gem = cell.gem
-  if (gem) {
-    const color = COLORS[gem.c] ?? '#ffffff'
-    if (gem.k === 'n') look = { ch: GLYPHS[gem.c], color }
-    else if (gem.k === 'row') look = { ch: '↔', color, bold: true }
-    else if (gem.k === 'col') look = { ch: '↕', color, bold: true }
-    else if (gem.k === 'bomb') look = { ch: '✹', color, bold: true }
-    else if (gem.k === 'rainbow') look = { ch: '✦', color: '#ffffff', bold: true }
-    else if (gem.k === 'treasure') look = { ch: '$', color: '#ffcc33', bold: true }
-  }
+  const slide = swapFrame(g, i)
+  const look = gemLook(slide ? slide.gem : cell.gem)
   if (cell.lock) bg = '#5a4526'
   if (g.hint && g.hint.includes(i)) bg = '#2f6b3a'
-  if (g.cursor === i && g.phase !== 'won' && g.phase !== 'lost') bg = '#56607a'
+  if (showCursor && g.cursor === i && g.phase !== 'won' && g.phase !== 'lost') bg = '#56607a'
   if (g.sel === i) bg = '#9a7d12'
-  return { ...look, bg }
+  if (slide?.lit) bg = '#3d4658'
+  return { ...look, bg, justify: slide?.justify ?? 'center' }
 }
 
 function stars(n: number): string {
   return '★'.repeat(n) + '☆'.repeat(3 - n)
 }
 
-function Board(surface: Surface, g: Game) {
+function Board(surface: Surface, g: Game, showCursor: boolean) {
   const { Box, Text } = surface.elements
   const rows = []
   for (let r = 0; r < g.R; r++) {
     const cells = []
     for (let c = 0; c < g.C; c++) {
-      const look = cellLook(g, r * g.C + c)
+      const look = cellLook(g, r * g.C + c, showCursor)
       cells.push(
-        <Box width={CELL_W} height={1} flexShrink={0} justifyContent="center" overflow="hidden" backgroundColor={look.bg}>
+        <Box width={CELL_W} height={1} flexShrink={0} justifyContent={look.justify} overflow="hidden" backgroundColor={look.bg}>
           <Text color={look.color} bold={look.bold}>{look.ch}</Text>
         </Box>,
       )
@@ -239,7 +263,7 @@ const Match3: ClientModule<GameProps, S> = (props, surface) => {
   let s = surface.state
   if (!s) {
     const lang = props.lang ?? 'en'
-    const ctx: Ctx = { g: newGame(props.launch?.level ?? 0, lang), lang, launchNonce: props.launch?.nonce ?? 0, down: -1, wide: true, advanceIn: 0 }
+    const ctx: Ctx = { g: newGame(props.launch?.level ?? 0, lang), lang, launchNonce: props.launch?.nonce ?? 0, down: -1, wide: true, advanceIn: 0, isKeyboard: false }
     s = { ctx, v: 0 }
     surface.setState(s)
     surface.every(90, () => onTick(surface))
@@ -268,7 +292,7 @@ const Match3: ClientModule<GameProps, S> = (props, surface) => {
         {TEXTS[ctx.lang].level} {g.lvl + 1}/{LEVELS.length}: {levelText(g.lvl, ctx.lang).name}  <Text dimColor>{levelText(g.lvl, ctx.lang).blurb}</Text>
       </Text>
       <Box flexDirection={ctx.wide ? 'row' : 'column'}>
-        {Board(surface, g)}
+        {Board(surface, g, ctx.isKeyboard)}
         {Side(surface, ctx)}
       </Box>
     </Box>

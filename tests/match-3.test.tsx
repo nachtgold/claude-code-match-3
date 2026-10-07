@@ -16,6 +16,11 @@ function board(rows: string[] = BASE): Game {
   return g
 }
 
+// Lets a swap's slide play out, up to what it turns into.
+function slide(g: Game) {
+  while (g.phase === 'swap') tick(g)
+}
+
 function special(g: Game, i: number, k: Kind, c = 0) {
   g.cells[i].gem = { c, k, id: 1000 + i }
 }
@@ -69,6 +74,7 @@ describe('combos', () => {
     special(g, 0, 'rainbow', -1)
     const color = g.cells[1].gem!.c
     expect(trySwap(g, 0, 1)).toBe(true)
+    slide(g)
     const all = g.cells.flatMap((cell, i) => (cell.gem?.c === color ? [i] : []))
     for (const i of all) expect(g.flash).toContain(i)
     expect(g.moves).toBe(19)
@@ -79,6 +85,7 @@ describe('combos', () => {
     special(g, 27, 'bomb', 1)
     special(g, 28, 'bomb', 2)
     trySwap(g, 27, 28)
+    slide(g)
     expect(g.flash.length).toBe(25)
   })
 
@@ -87,6 +94,7 @@ describe('combos', () => {
     special(g, 27, 'row', 1)
     special(g, 28, 'col', 2)
     trySwap(g, 27, 28)
+    slide(g)
     expect(g.flash.length).toBe(15)
   })
 
@@ -95,13 +103,20 @@ describe('combos', () => {
     special(g, 27, 'rainbow', -1)
     special(g, 28, 'rainbow', -1)
     trySwap(g, 27, 28)
+    slide(g)
     expect(g.flash.length).toBe(64)
   })
 
   test('a swap with no match is undone', () => {
     const g = board()
+    const before = g.cells.map(cell => cell.gem?.id)
     trySwap(g, 0, 1)
+    expect(g.phase).toBe('swap')
+    slide(g)
     expect(g.phase).toBe('unswap')
+    while (g.phase === 'unswap') tick(g)
+    expect(g.phase).toBe('idle')
+    expect(g.cells.map(cell => cell.gem?.id)).toEqual(before)
     expect(g.moves).toBe(20)
   })
 })
@@ -152,6 +167,11 @@ test('the pane starts at level 1 in English', async ($, on) => {
     await ui.advance(500)
     await ui.press({ key: 'restart' })
     expect(await ui.find({ in: 'game', text: /Score/ })).toBeDefined()
+    // Drag the top-left gem onto its right neighbour and let the slide play.
+    await ui.pointer({ type: 'down', x: 2, y: 2, button: 'left' })
+    await ui.pointer({ type: 'up', x: 5, y: 2, button: 'left' })
+    await ui.advance(2000)
+    expect(await ui.find({ in: 'game', text: /Moves/ })).toBeDefined()
     await ui.unmount()
   }
 })
