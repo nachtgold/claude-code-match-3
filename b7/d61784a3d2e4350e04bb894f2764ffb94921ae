@@ -1,0 +1,24 @@
+tests/match-3.test.tsx
+  s_a42d350d6fef19::t_6a6a7acd40b7f2 19-23,77,88,97,106,112,114-115,117-119
+  s_a42d350d6fef19::t_31a9e36be46319 170-174
+hooks/engine.ts
+  s_a42d350d6fef19::t_14178e411445af 44-45,174,564-566,578-581,584-585,587-588,645,647-654,656-663,665
+hooks/game.tsx
+  s_a42d350d6fef19::t_11995108ca94f2 5,7,19-20,87,119,143-144,146-175,184-185,188,190-191,198,204,206,266,295
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b7d61784a3d2e4350e04bb894f2764ffb94921ae",
+  "prompts": {},
+  "sessions": {
+    "s_a42d350d6fef19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "41e1c1be-2cd3-4723-afce-0f76622c8f6f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "nachtgold <zimmermann.k@gmail.com>"
+    }
+  }
+}
