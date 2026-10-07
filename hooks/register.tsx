@@ -72,7 +72,7 @@ export const register: Register = (on, options) => {
       await $.store.set('progress', reset)
       await update($, launch, prev => ({ level: 0, nonce: prev.nonce + 1 }))
     }
-    await $.ui.open({ id: PANE, title: 'Match-3', focus: true, holdToasts: true, rows: 26, columns: 84 })
+    await $.ui.open({ id: PANE, title: 'Match-3', focus: true, holdToasts: true, rows: 26, columns: 90 })
     const { level } = normalize(await read($, progress))
 
     return { text: TEXTS[lang].opened(level + 1) }

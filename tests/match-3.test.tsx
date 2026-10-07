@@ -55,7 +55,7 @@ describe('matches and specials', () => {
     expect(created[0].i).toBe(16)
   })
 
-  test('5 in a row makes a color bomb', () => {
+  test('5 in a row makes a prism', () => {
     const { created } = analyze(board(['00000312', ...BASE.slice(1)]), [])
     expect(created.map(x => x.gem.k)).toEqual(['rainbow'])
   })
@@ -70,7 +70,7 @@ describe('matches and specials', () => {
 })
 
 describe('combos', () => {
-  test('color bomb + gem clears every gem of that color', () => {
+  test('prism + gem clears every gem of that color', () => {
     const g = board()
     special(g, 0, 'rainbow', -1)
     const color = g.cells[1].gem!.c
@@ -99,7 +99,7 @@ describe('combos', () => {
     expect(g.flash.length).toBe(15)
   })
 
-  test('color bomb + color bomb clears the board', () => {
+  test('prism + prism clears the board', () => {
     const g = board()
     special(g, 27, 'rainbow', -1)
     special(g, 28, 'rainbow', -1)

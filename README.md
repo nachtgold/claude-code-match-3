@@ -2,7 +2,7 @@
 
 A match-3 puzzle game as a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview). Type `/match3` and the board opens in a pane next to your session: swap gems, build rockets and bombs, chain combos, and play through five levels while Claude works.
 
-![Match-3 in a Claude Code pane: level 3, Quarry, with stones, a rocket, a bomb and a color bomb on the board](docs/screenshot.png)
+![Match-3 in a Claude Code pane: level 3, Quarry, with stones, a rocket, a bomb and a prism on the board](docs/screenshot.png)
 
 ## Install
 
@@ -35,7 +35,7 @@ Five colors: ● red, ★ yellow, ▲ green, ◆ blue, ■ purple.
 | --- | --- | --- |
 | 4 in a row | ↔ / ↕ rocket | clears its whole row or column |
 | L or T shape | ✹ bomb | blasts the 3×3 area around it |
-| 5 in a row | ✦ color bomb | swap it with a gem: every gem of that color is cleared |
+| 5 in a row | ✦ prism | swap it with a gem: every gem of that color is cleared |
 
 Specials are tiles filled with their color, the color's shape on both sides and the effect's mark in the middle (●↔●, ◆↕◆, ▲✹▲), so you can tell their color by shape too. They match like a gem of that color.
 
@@ -48,8 +48,8 @@ A special caught in another blast fires too, so chain reactions happen. Each cas
 | rocket + rocket | a full row and column cross |
 | rocket + bomb | a cross three rows and three columns wide |
 | bomb + bomb | a 5×5 blast |
-| color bomb + rocket / bomb | every gem of that color turns into that special and fires |
-| color bomb + color bomb | clears the whole board |
+| prism + rocket / bomb | every gem of that color turns into that special and fires |
+| prism + prism | clears the whole board |
 
 ## Levels
 

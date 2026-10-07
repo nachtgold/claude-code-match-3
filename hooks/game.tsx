@@ -27,7 +27,7 @@ type Surface = ClientSurface<S>
 const CELL_W = 5
 const CELL_H = 2
 const HEADER_ROWS = 1
-const SIDE_W = 34
+const SIDE_W = 40
 const ADVANCE_TICKS = 35
 const BG = ['#1f232b', '#272c36']
 const ICE_BG = ['', '#2d5f80', '#4f97c4']
@@ -292,11 +292,9 @@ function Side(surface: Surface, ctx: Ctx) {
         {!won && !lost && <Button key="restart" label={t.restart} onPress={() => { start(ctx, g.lvl); redraw(surface) }} />}
       </Box>
       <Text> </Text>
-      <Text dimColor>{t.help[0]}</Text>
-      <Text dimColor>{t.help[1]}</Text>
+      {t.help.map(line => <Text dimColor>{line}</Text>)}
       <Text> </Text>
-      <Text dimColor>{t.help[2]}</Text>
-      <Text dimColor>{t.help[3]}</Text>
+      {t.legend.map(line => <Text dimColor wrap="truncate-end">{line}</Text>)}
     </Box>
   )
 }

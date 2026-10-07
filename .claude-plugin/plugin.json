@@ -1,7 +1,7 @@
 {
   "name": "match-3",
   "version": "1.0.0",
-  "description": "Match-3 puzzle game in a Claude Code pane: /match3 – 5 colors, 5 levels, rockets, bombs, color bombs and combos",
+  "description": "Match-3 puzzle game in a Claude Code pane: /match3 – 5 colors, 5 levels, rockets, bombs, prisms and combos",
   "author": { "name": "nachtgold", "url": "https://github.com/nachtgold" },
   "homepage": "https://github.com/nachtgold/claude-code-match-3",
   "repository": "https://github.com/nachtgold/claude-code-match-3",
