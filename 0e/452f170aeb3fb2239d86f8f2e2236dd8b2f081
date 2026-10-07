@@ -1,0 +1,31 @@
+tests/match-3.test.tsx
+  s_a42d350d6fef19::t_b1674dbb39720a 58,73,102
+.claude-plugin/marketplace.json
+  s_a42d350d6fef19::t_b1674dbb39720a 9
+hooks/i18n.ts
+  s_a42d350d6fef19::t_b1674dbb39720a 18,26-29,48-53,74,82-85,104-109
+hooks/register.tsx
+  s_a42d350d6fef19::t_b1674dbb39720a 75
+.claude-plugin/plugin.json
+  s_a42d350d6fef19::t_b1674dbb39720a 4
+README.md
+  s_a42d350d6fef19::t_b1674dbb39720a 5,38,51-52
+hooks/game.tsx
+  s_a42d350d6fef19::t_b1674dbb39720a 30,295,297
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0e452f170aeb3fb2239d86f8f2e2236dd8b2f081",
+  "prompts": {},
+  "sessions": {
+    "s_a42d350d6fef19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "41e1c1be-2cd3-4723-afce-0f76622c8f6f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "nachtgold <zimmermann.k@gmail.com>"
+    }
+  }
+}
