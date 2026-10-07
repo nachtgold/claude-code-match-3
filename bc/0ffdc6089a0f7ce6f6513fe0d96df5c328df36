@@ -1,0 +1,22 @@
+tests/match-3.test.tsx
+  s_a42d350d6fef19::t_8bd83dbbbc0877 4,228-234
+  s_a42d350d6fef19::t_785769b93f4cad 235
+hooks/engine.ts
+  s_a42d350d6fef19::t_8bd83dbbbc0877 174
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bc0ffdc6089a0f7ce6f6513fe0d96df5c328df36",
+  "prompts": {},
+  "sessions": {
+    "s_a42d350d6fef19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "41e1c1be-2cd3-4723-afce-0f76622c8f6f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "nachtgold <zimmermann.k@gmail.com>"
+    }
+  }
+}
