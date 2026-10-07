@@ -2,12 +2,14 @@
 
 A match-3 puzzle game as a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview). Type `/match3` and the board opens in a pane next to your session: swap gems, build rockets and bombs, chain combos, and play through five levels while Claude works.
 
+![Match-3 in a Claude Code pane: level 3, Quarry, with stones, a rocket, a bomb and a color bomb on the board](docs/screenshot.png)
+
 ## Install
 
 Claude Code v2.1.287 or later (Desktop app: v2.1.286 or later).
 
 ```bash
-claude plugin marketplace add nachtgold/match-3
+claude plugin marketplace add nachtgold/claude-code-match-3
 ```
 
 ```bash
