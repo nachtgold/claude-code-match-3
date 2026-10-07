@@ -1,0 +1,39 @@
+.claude-plugin/marketplace.json
+  s_a42d350d6fef19::t_0d77661e895c20 1-12
+.claude-plugin/plugin.json
+  s_a42d350d6fef19::t_14a13efab2c902 1-20
+.gitignore
+  s_a42d350d6fef19::t_b5afb45f6231b8 1-5
+LICENSE
+  s_a42d350d6fef19::t_e74c590814e26f 1-21
+README.md
+  s_a42d350d6fef19::t_fbe8ce9e53bf30 1-86
+hooks/engine.ts
+  s_a42d350d6fef19::t_a53cc1bd30e361 1-680
+hooks/game.tsx
+  s_a42d350d6fef19::t_489fe9ed0f6867 1-278
+hooks/hooks.json
+  s_a42d350d6fef19::t_5824ee1464ab29 1
+hooks/register.tsx
+  s_a42d350d6fef19::t_dd0f5c16c49373 1-115
+tests/match-3.test.tsx
+  s_a42d350d6fef19::t_30cced670af18f 1-194
+types/index.d.ts
+  s_a42d350d6fef19::t_fbb741356fbc17 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5fce3f534f474d5bd2313bdb42776039dd79dd82",
+  "prompts": {},
+  "sessions": {
+    "s_a42d350d6fef19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "41e1c1be-2cd3-4723-afce-0f76622c8f6f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "nachtgold <kai.zimmermann@amplimind.io>"
+    }
+  }
+}
