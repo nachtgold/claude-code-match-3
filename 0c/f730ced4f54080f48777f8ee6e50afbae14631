@@ -1,0 +1,21 @@
+.claude-plugin/plugin.json
+  s_a42d350d6fef19::t_0e25c669fac68e 6-7
+README.md
+  s_a42d350d6fef19::t_75c2839bbe6701 5-6,12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0cf730ced4f54080f48777f8ee6e50afbae14631",
+  "prompts": {},
+  "sessions": {
+    "s_a42d350d6fef19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "41e1c1be-2cd3-4723-afce-0f76622c8f6f",
+        "model": "unknown"
+      },
+      "human_author": "nachtgold <zimmermann.k@gmail.com>"
+    }
+  }
+}
